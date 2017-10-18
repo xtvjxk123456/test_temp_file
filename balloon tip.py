@@ -54,6 +54,10 @@ class popupMessage(QtGui.QLabel):
 class messageArea(QtGui.QDialog):
     def __init__(self, parent):
         super(messageArea, self).__init__(parent)
+
+        self.deleteTimer = QtCore.QTimer()
+        self.deleteTimer.timeout.connect(self.clean)
+
         self.setFixedWidth(200)
         self.mainlayout = QtGui.QVBoxLayout()
         self.mainlayout.setContentsMargins(0, 0, 0, 0)
@@ -61,16 +65,26 @@ class messageArea(QtGui.QDialog):
         self.setLayout(self.mainlayout)
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+
+        self.popMessages = {}
         for x in range(5):
-            self.mainlayout.addWidget(popupMessage(self, 'this is meassage({})'.format(x), 2000 + 1000 * x))
+            mes = popupMessage(self, 'this is meassage({})'.format(x), 2000 + 1000 * x)
+            self.mainlayout.addWidget(mes)
+            self.popMessages.update({mes: 2000 + 1000 * x})
 
         center = self.parentWidget().size()
         self.move(center.width() * .5 - self.width() * .5, center.height() * .5)
+
+        self.deleteTimer.start(max(self.popMessages.values()) + 2000)
 
     def showUI(self):
         self.update()
         self.adjustSize()
         self.show()
+
+    def clean(self):
+        self.close()
+        self.deleteLater()
 
 
 m = messageArea(getMayaWindow())
