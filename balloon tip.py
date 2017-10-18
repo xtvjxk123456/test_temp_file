@@ -51,11 +51,12 @@ class popupMessage(QtGui.QLabel):
         # self.move(center.width() * .5 - self.width() * .5, 10);
 
 
-class messageArea(QtGui.QDialog):
+class messageArea(QtGui.QWidget):
     def __init__(self, parent):
         super(messageArea, self).__init__(parent)
+
         self.setFixedWidth(200)
-        self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.Window)
         self.setAttribute(QtCore.Qt.WA_NoSystemBackground)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
@@ -77,7 +78,6 @@ class messageArea(QtGui.QDialog):
         center = self.parentWidget().size()
         self.move(center.width() * .5 - self.width() * .5, center.height() * .5)
 
-        print self.popMessages
         self.deleteTimer.start(max(self.popMessages.values()) + 2000)
 
     def showUI(self):
@@ -96,5 +96,3 @@ class messageArea(QtGui.QDialog):
 
 m = messageArea(getMayaWindow())
 m.showUI()
-
-
