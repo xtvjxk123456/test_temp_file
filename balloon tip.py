@@ -13,6 +13,8 @@ def getMayaWindow():
 
 
 class popupMessage(QtGui.QLabel):
+    closed = QtCore.Signal()
+
     def __init__(self, parent, message="", timeout=2000):
         super(popupMessage, self).__init__(parent)
         self.message = message
@@ -37,7 +39,9 @@ class popupMessage(QtGui.QLabel):
         ''')
 
     def times_up(self):
+        self.timer.stop()
         self.close()
+        self.closed.emit()
         self.parentWidget().adjustSize()
         self.parentWidget().update()
 
@@ -52,7 +56,7 @@ class popupMessage(QtGui.QLabel):
 
 
 class messageArea(QtGui.QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, lifespan=3000):
         super(messageArea, self).__init__(parent)
 
         self.setFixedWidth(200)
@@ -60,6 +64,7 @@ class messageArea(QtGui.QWidget):
         self.setAttribute(QtCore.Qt.WA_NoSystemBackground)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
+        self.lifespan = lifespan
         self.deleteTimer = QtCore.QTimer(self)
         self.deleteTimer.timeout.connect(self.clean)
         self._isDeleted = False
@@ -70,15 +75,11 @@ class messageArea(QtGui.QWidget):
         self.setLayout(self.mainlayout)
 
         self.popMessages = {}
-        for x in range(5):
-            mes = popupMessage(self, 'this is meassage({})'.format(x), 3000 + 2000 * x)
-            self.mainlayout.addWidget(mes)
-            self.popMessages.update({mes: 3000 + 2000 * x})
 
         center = self.parentWidget().size()
         self.move(center.width() * .5 - self.width() * .5, center.height() * .5)
 
-        self.deleteTimer.start(max(self.popMessages.values()) + 2000)
+        self.deleteTimer.start(self.lifespan)
 
     def showUI(self):
         self.update()
@@ -86,12 +87,36 @@ class messageArea(QtGui.QWidget):
         self.show()
 
     def clean(self):
+        # 在没有message的情况下lifespan =lifespan
+        self.deleteTimer.stop()
         self.close()
         self.deleteLater()
         self._isDeleted = True
 
     def isDeleted(self):
         return self._isDeleted
+
+    def addMessage(self, message, timeout=3000):
+        mes = popupMessage(self, message, timeout)
+        self.mainlayout.addWidget(mes)
+        mes.closed.connect(self.updateTime)
+        self.popMessages.update({mes: timeout})
+        self.resetDeleteTimer()
+
+    def resetDeleteTimer(self):
+        if not self.popMessages.values():
+            maxTime = self.lifespan
+        else:
+            maxTime = max(self.popMessages.values())
+        self.deleteTimer.stop()
+        # 在有message的情况下lifespan+1000
+        self.deleteTimer.start(maxTime + 1000)
+
+    def updateTime(self, ):
+        mes = self.sender()
+
+        self.popMessages.pop(mes)
+        self.resetDeleteTimer()
 
 
 m = messageArea(getMayaWindow())
